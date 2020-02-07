@@ -1,0 +1,22 @@
+#+TITLE: addressbar-eww
+
+Handy addressbar function for eww browser.
+
+* Feature
+works like common addressbar you know:
+- suggest url from past history
+- switch to eww buffer if already opened
+  - depends on your M-x eww behavior
+- or input words for search engines
+- add/delete bookmark from addressbar (ivy)
+- TBD: history is saved for next emacs session
+- TBD: sort histories by timestamp (ivy)
+
+* Install
+TBD
+
+* Usage
+M-x addressbar-eww or M-x counsel-eww will do the job.
+
+* Sample configuration
+TBD
