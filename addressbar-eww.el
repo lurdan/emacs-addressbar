@@ -46,7 +46,7 @@
       (addressbar-eww--cleanup))
   (with-temp-file (expand-file-name "addresbar-eww-history" addressbar-eww-persistent-history-directory)
     (insert ";; Auto-generated file; don't edit\n")
-    (prin1-to-string addressbar-eww--entries)))
+    (insert (prin1-to-string addressbar-eww--entries))))
 
 (defun addressbar-eww--load-persistent-history ()
   "reload saved history"
