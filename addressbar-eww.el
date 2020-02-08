@@ -6,8 +6,6 @@
   :group 'web
   :prefix "addressbar-eww-")
 
-(defvar addressbar-eww--entries (make-hash-table :test #'equal))
-
 (defcustom addressbar-eww-persistent-history-directory user-emacs-directory
   "Directory where history files will be stored."
   :group 'addressbar-eww
@@ -18,6 +16,10 @@
   )
 
 (defcustom addressbar-eww-copy-org-link nil
+  ""
+  )
+
+(defvar addressbar-eww--entries (make-hash-table :test #'equal)
   ""
   )
 
@@ -49,11 +51,11 @@
 (defun addressbar-eww--load-persistent-history ()
   "reload saved history"
   (let ((file (expand-file-name "addresbar-eww-history" addressbar-eww-persistent-history-directory)))
-    (setq addressbar-eww--entries
-          (unless (zerop (or (file-attribute-size (file-attributes file)) 0))
-            (with-temp-buffer
-              (insert-file-contents file)
-              (read (current-buffer)))))))
+    (if (file-exists-p file)
+        ;; need error handling?
+        (setq addressbar-eww--entries (with-temp-buffer
+                                        (insert-file-contents file)
+                                        (read (current-buffer)))))))
 
 (defun addressbar-eww--get-entry-metadata (label entry)
   "Getter of addressbar candidates."
