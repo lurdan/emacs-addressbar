@@ -117,12 +117,10 @@
 (defun addressbar-eww--update-entries ()
   "Collect entries of history hash. \
 Once in startup, it also search history of eww buffers."
-  (and (eq (hash-table-count addressbar-eww--entries) 0)
-       (dolist (buf (buffer-list))
-         (addressbar-eww--load-buffer-history buf))
-       )
   (addressbar-eww--load-persistent-history)
   (addressbar-eww--load-bookmark)
+  (dolist (buf (buffer-list))
+    (addressbar-eww--load-buffer-history buf))
   )
 
 (defun addressbar-eww-list-candidates ()
