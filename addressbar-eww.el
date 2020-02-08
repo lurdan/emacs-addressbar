@@ -1,22 +1,29 @@
 (require 'eww)
 (require 'subr-x)
 
-(defvar addressbar-eww--entries (make-hash-table :test #'equal))
-(defvar addressbar-eww-persistent-history-file)
-(defvar addressbar-eww-cleanup-threshold 0)
+(defgroup addressbar-eww nil
+  "Addressbar for EWW"
+  :group 'web
+  :prefix "addressbar-eww-")
 
-(defun addressbar-eww--save-persistent-history ()
-  "TODO: save current addressbar history into disk"
-  (if (< addressbar-eww-cleanup-threshold (hash-table-count addressbar-eww--entries))
-      (addressbar-eww--cleanup))
-  ;; addressbar-eww-persistent-history-file
-  ;; (prin1-to-string addressbar-eww--entries))
+(defvar addressbar-eww--entries (make-hash-table :test #'equal))
+
+(defcustom addressbar-eww-persistent-history-directory user-emacs-directory
+  "Directory where history files will be stored."
+  :group 'addressbar-eww
+  :type 'directory)
+
+(defcustom addressbar-eww-cleanup-threshold 0
+  ""
   )
 
-(defun addressbar-eww--load-persistent-history ()
-  "TODO: reload saved history"
-  ;; addressbar-eww-persistent-history-file
-  ;; (read (buffer-string))
+(defcustom addressbar-eww-copy-org-link nil
+  ""
+  )
+
+(defun addressbar-eww-copy-link (entry)
+  ""
+  ;; addressbar-eww-copy-org-link
   )
 
 (defun addressbar-eww--have-newer-timestamp ()
@@ -30,6 +37,23 @@
 (defun addressbar-eww-sort ()
   "TODO: sort candidates by its :time"
   )
+
+(defun addressbar-eww--save-persistent-history ()
+  "save current addressbar history into disk"
+  (if (< addressbar-eww-cleanup-threshold (hash-table-count addressbar-eww--entries))
+      (addressbar-eww--cleanup))
+  (with-temp-file (expand-file-name "addresbar-eww-history" addressbar-eww-persistent-history-directory)
+    (insert ";; Auto-generated file; don't edit\n")
+    (prin1-to-string addressbar-eww--entries)))
+
+(defun addressbar-eww--load-persistent-history ()
+  "reload saved history"
+  (let ((file (expand-file-name "addresbar-eww-history" addressbar-eww-persistent-history-directory)))
+    (setq addressbar-eww--entries
+          (unless (zerop (or (file-attribute-size (file-attributes file)) 0))
+            (with-temp-buffer
+              (insert-file-contents file)
+              (read (current-buffer)))))))
 
 (defun addressbar-eww--get-entry-metadata (label entry)
   "Getter of addressbar candidates."
@@ -185,7 +209,6 @@ If bookmarked, also delete it."
   ;;         ))
 
   ;; ignore eww buffers from buffer list
-  ;; (add-to-list 'ivy-ignore-buffers "\\ \*eww")
   ;; company-dabbrev-ignore-buffers
   )
 

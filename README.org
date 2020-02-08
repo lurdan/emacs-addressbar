@@ -9,7 +9,7 @@ works like common addressbar you know:
   - depends on your M-x eww behavior
 - or input words for search engines
 - add/delete bookmark from addressbar (ivy)
-- TBD: history is saved for next emacs session
+- history is saved for next emacs session
 - TBD: sort histories by timestamp (ivy)
 
 * Install
@@ -19,4 +19,12 @@ TBD
 M-x addressbar-eww or M-x counsel-eww will do the job.
 
 * Sample configuration
-TBD
+
+#+BEGIN_SRC emacs-lisp
+(leaf addressbar-eww
+  :el-get lurdan/emacs-addressbar-eww
+  :bind (("C-x b" . counsel-eww))
+  :config
+  (add-to-list 'ivy-ignore-buffers "\\ \*eww*")
+  )
+#+END_SRC
