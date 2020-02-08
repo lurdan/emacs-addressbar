@@ -1,5 +1,6 @@
 (require 'eww)
 (require 'subr-x)
+(require 'cl)
 
 (defgroup addressbar-eww nil
   "Addressbar for EWW"
@@ -108,8 +109,9 @@
   (dolist (buf (buffer-list))
     (with-current-buffer buf
       (if (derived-mode-p 'eww-mode)
-          (if (eq (plist-get eww-data :url) entry)
-              buf)))))
+          (if (string-equal (plist-get eww-data :url) entry)
+              (return buf))
+        ))))
 
 ;;(clrhash addressbar-eww--entries)
 (defun addressbar-eww--update-entries ()
