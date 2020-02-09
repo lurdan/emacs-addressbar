@@ -12,6 +12,10 @@
   :group 'addressbar-eww
   :type 'directory)
 
+(defcustom addressbar-eww-ignore-url-regexp "\\(duckduckgo\\.com/\\(html/\\)?\\?q=\\|google\\.com/search\\)"
+  "URL match this regexp won't list or save as history."
+  )
+
 (defcustom addressbar-eww-cleanup-threshold 0
   ""
   )
@@ -70,12 +74,14 @@
   (let ((url (plist-get plist :url))
         (title (plist-get plist :title))
         (time (plist-get plist :time)))
-    (puthash url (list type
-                       title
-                       (time-to-seconds (if time
-                                            (decode-time (parse-time-string time))
-                                          (current-time))))
-             addressbar-eww--entries)))
+    (unless (string-match-p addressbar-eww-ignore-url-regexp url)
+      (puthash url (list type
+                         title
+                         (time-to-seconds (if time
+                                              (decode-time (parse-time-string time))
+                                            (current-time))))
+               addressbar-eww--entries)))
+  )
 
 (defun addressbar-eww--load-bookmark ()
   "Convert bookmark of eww into addressbar candidates."
