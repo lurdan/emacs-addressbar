@@ -29,17 +29,15 @@
   ;; addressbar-eww-copy-org-link
   )
 
-(defun addressbar-eww--have-newer-timestamp ()
-  "TODO: compare entry's timestamp. will required for cleanup and sort"
-  )
-
 (defun addressbar-eww--cleanup ()
   "TODO: delete oldest entries from candidates"
   )
 
-(defun addressbar-eww-sort ()
-  "TODO: sort candidates by its :time"
-  )
+(defun addressbar-eww--have-newer-timestamp (x y)
+  "compare entry's timestamp."
+  (if (< (addressbar-eww--get-time x)
+         (addressbar-eww--get-time y))
+      nil t))
 
 (defun addressbar-eww--save-persistent-history ()
   "save current addressbar history into disk"
@@ -170,7 +168,7 @@ If bookmarked, also delete it."
 (defun addressbar-eww ()
   "Handy addressbar function for eww browser."
   (interactive)
-  (eww (completing-read "EWW: " (addressbar-eww-list-candidates))))
+  (eww (completing-read "EWW: " (sort (addressbar-eww-list-candidates) 'addressbar-eww--have-newer-timestamp))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (when (locate-library "ivy")
@@ -197,11 +195,11 @@ If bookmarked, also delete it."
     (ivy-read "EWW: " (addressbar-eww-list-candidates)
               :action 'counsel-eww-browse
               :history 'counsel-eww-history
-              :sort 'sort
+              :sort t
               ))
 
-  (defun counsel-eww-display-url (entry)
-    )
+  (add-to-list 'ivy-sort-functions-alist
+             '(counsel-eww . addressbar-eww--have-newer-timestamp))
 
   (defun counsel-eww-display-type (entry)
     (pcase (addressbar-eww--get-type entry)
