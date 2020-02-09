@@ -87,8 +87,9 @@
   "Convert bookmark of eww into addressbar candidates."
   (eww-read-bookmarks)
   (dolist (bookmark eww-bookmarks)
-    (addressbar-eww--add-entry :bookmark bookmark)
-    ))
+    (unless (gethash (plist-get bookmark :url) addressbar-eww--entries)
+      (addressbar-eww--add-entry :bookmark bookmark)
+      )))
 
 (defun addressbar-eww--add-current-history ()
   "Add or update addressbar candidate with current browsing page."
@@ -117,14 +118,16 @@
               (return buf))
         ))))
 
-;;(clrhash addressbar-eww--entries)
+(defvar addressbar-eww--startup t)
 (defun addressbar-eww--update-entries ()
   "Collect entries of history hash. \
 Once in startup, it also search history of eww buffers."
   (addressbar-eww--load-persistent-history)
   (addressbar-eww--load-bookmark)
-  (dolist (buf (buffer-list))
-    (addressbar-eww--load-buffer-history buf))
+  (when addressbar-eww--startup   ;; should be run only once
+    (dolist (buf (buffer-list))
+      (addressbar-eww--load-buffer-history buf))
+    (setq addressbar-eww--startup nil))
   )
 
 (defun addressbar-eww-list-candidates ()
