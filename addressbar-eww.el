@@ -12,7 +12,7 @@
   :group 'addressbar-eww
   :type 'directory)
 
-(defcustom addressbar-eww-ignore-url-regexp "\\(duckduckgo\\.com/\\(html/\\)?\\?q=\\|google\\.com/search\\)"
+(defcustom addressbar-eww-ignore-url-regexp "\\(://duckduckgo\\.com/\\|google\\.com/search\\)"
   "URL match this regexp won't list or save as history."
   )
 
@@ -80,8 +80,9 @@
                          (time-to-seconds (if time
                                               (decode-time (parse-time-string time))
                                             (current-time))))
-               addressbar-eww--entries)))
-  )
+               addressbar-eww--entries)
+      (addressbar-eww--save-persistent-history)
+      )))
 
 (defun addressbar-eww--load-bookmark ()
   "Convert bookmark of eww into addressbar candidates."
