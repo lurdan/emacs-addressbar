@@ -214,16 +214,20 @@ If bookmarked, also delete it."
     (format-time-string "%Y-%m-%d %H:%M" (seconds-to-time (addressbar-eww--get-time entry)))
     )
 
-  (eval-after-load 'ivy-rich
-    (setq ivy-rich-display-transformers-list
-          (plist-put ivy-rich-display-transformers-list
-                     'counsel-eww
-                     '(:columns ((counsel-eww-display-type (:face success :width 2))
-                                 (ivy-rich-candidate (:width 40))
-                                 (addressbar-eww--get-title ())
-                                 (counsel-eww-display-time (:width 16 :align right))
-                                 )))
-          ))
+  (defun counsel-eww-display-url (entry)
+    )
+
+  (setq ivy-rich-display-transformers-list
+        (plist-put ivy-rich-display-transformers-list
+                   'counsel-eww
+                   '(:columns
+                     ((counsel-eww-display-type (:face success :width 1))
+                      (counsel-eww-display-time (:width 16))
+                      (ivy-rich-candidate (:width 0.7))
+                      (addressbar-eww--get-title (:width 0.1 :face font-lock-doc-face))
+                      ))
+                   ))
+  (if ivy-rich-mode (ivy-rich-reload))
 
   ;; ignore eww buffers from buffer list
   ;; company-dabbrev-ignore-buffers
