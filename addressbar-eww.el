@@ -200,15 +200,32 @@ If bookmarked, also delete it."
               :sort 'sort
               ))
 
-  ;; (eval-after-load 'ivy-rich
-  ;;   (setq ivy-rich-display-transformers-list (plist-put ivy-rich-display-transformers-list
-  ;;                                                       'counsel-eww
-  ;;                                                       '(:columns ((counsel-eww-transformer (:width 40))
-  ;;                                                                   (counsel-eww-entry-type)
-  ;;                                                                   (counsel-eww-entry-title (:face font-lock-dock-face))
-  ;;                                                                   (counsel-eww-entry-timestamp)
-  ;;                                                                   ))))
-  ;;         ))
+  (defun counsel-eww-display-url (entry)
+    )
+
+  (defun counsel-eww-display-type (entry)
+    (pcase (addressbar-eww--get-type entry)
+      (:bookmark "b")
+      (:history "h")
+      ))
+
+  (defun counsel-eww-display-icon (entry)
+      (all-the-icons-xxxx "XXXX" :height .9))
+
+  (defun counsel-eww-display-time (entry)
+    (format-time-string "%Y-%m-%d %H:%M" (seconds-to-time (addressbar-eww--get-time entry)))
+    )
+
+  (eval-after-load 'ivy-rich
+    (setq ivy-rich-display-transformers-list
+          (plist-put ivy-rich-display-transformers-list
+                     'counsel-eww
+                     '(:columns ((counsel-eww-display-type (:face success :width 2))
+                                 (ivy-rich-candidate (:width 40))
+                                 (addressbar-eww--get-title ())
+                                 (counsel-eww-display-time (:width 16 :align right))
+                                 )))
+          ))
 
   ;; ignore eww buffers from buffer list
   ;; company-dabbrev-ignore-buffers
