@@ -58,14 +58,14 @@
                                         (insert-file-contents file)
                                         (read (current-buffer)))))))
 
-(defun addressbar-eww--get-entry-metadata (label entry)
-  "Getter of addressbar candidates."
-  (let ((meta (gethash entry addressbar-eww--entries)))
-    (cond
-     ((eq label :type) (car meta))
-     ((eq label :title) (cadr meta))
-     ((eq label :time) (cadr meta))
-     )))
+(defun addressbar-eww--get-type (entry)
+  (nth 0 (gethash entry addressbar-eww--entries)))
+
+(defun addressbar-eww--get-title (entry)
+  (nth 1 (gethash entry addressbar-eww--entries)))
+
+(defun addressbar-eww--get-time (entry)
+  (nth 2 (gethash entry addressbar-eww--entries)))
 
 (defun addressbar-eww--add-entry (type plist)
   "Setter of addressbar candidates."
@@ -132,7 +132,7 @@ Once in startup, it also search history of eww buffers."
 (defun addressbar-eww-delete-entry (entry)
   "Delete selected url from history candidates. \
 If bookmarked, also delete it."
-  (when (eq (addressbar-eww--get-entry-metadata :type entry) :bookmark)
+  (when (eq (addressbar-eww--get-type entry) :bookmark)
     (let (bm)
       (dolist (bookmark eww-bookmarks)
         (if (not (equal entry (plist-get bookmark :url)))
@@ -155,7 +155,7 @@ If bookmarked, also delete it."
       (user-error "Already bookmarked")))
   (when (y-or-n-p "Bookmark this page?")
     (let ((title (replace-regexp-in-string "[\n\t\r]" " "
-                                           (addressbar-eww--get-entry-metadata entry :title))))
+                                           (addressbar-eww--get-title entry))))
       (setq title (replace-regexp-in-string "\\` +\\| +\\'" "" title))
       (push (list :url entry
                   :title title
