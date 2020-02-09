@@ -4,13 +4,13 @@ Handy addressbar function for eww browser.
 
 * Feature
 works like common addressbar you know:
-- suggest url from past history
+- suggest url to open from past history:
+  - sorted by timestamp
+  - saved for next emacs session
 - switch to eww buffer if already opened
-  - depends on your M-x eww behavior
 - or input words for search engines
-- add/delete bookmark from addressbar (ivy)
-- history is saved for next emacs session
-- TBD: sort histories by timestamp (ivy)
+- add/delete bookmark from history (ivy)
+- TBD: screenshot
 
 * Install
 TBD
@@ -22,6 +22,15 @@ M-x addressbar-eww or M-x counsel-eww will do the job.
 
 #+BEGIN_SRC emacs-lisp
 (leaf addressbar-eww
+  :el-get lurdan/emacs-addressbar-eww
+  :bind (("C-x b" . counsel-eww))
+  :config
+  (add-to-list 'ivy-ignore-buffers "\\ \*eww*")
+  )
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+(use-package addressbar-eww
   :el-get lurdan/emacs-addressbar-eww
   :bind (("C-x b" . counsel-eww))
   :config
