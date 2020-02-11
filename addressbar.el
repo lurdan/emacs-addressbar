@@ -47,13 +47,13 @@
   "save current addressbar history into disk"
   (if (< addressbar-cleanup-threshold (hash-table-count addressbar--entries))
       (addressbar--cleanup))
-  (with-temp-file (expand-file-name "addresbar-history" addressbar-persistent-history-directory)
+  (with-temp-file (expand-file-name "addressbar-history" addressbar-persistent-history-directory)
     (insert ";; Auto-generated file; don't edit\n")
     (insert (prin1-to-string addressbar--entries))))
 
 (defun addressbar--load-persistent-history ()
   "reload saved history"
-  (let ((file (expand-file-name "addresbar-history" addressbar-persistent-history-directory)))
+  (let ((file (expand-file-name "addressbar-history" addressbar-persistent-history-directory)))
     (if (file-exists-p file)
         ;; need error handling?
         (setq addressbar--entries (with-temp-buffer
@@ -208,7 +208,7 @@ If bookmarked with eww, also delete it."
     (eww-write-bookmarks)
     ))
 
-(defvar addressbar-dispaly-url-max-length nil)
+(defvar addressbar-display-url-max-length nil)
 
 (defun addressbar--display-url (entry)
   (let ((max (or addressbar-display-url-max-length
