@@ -175,28 +175,31 @@ If bookmarked with eww, also delete it."
     (eww-write-bookmarks)
     ))
 
+(defun addressbar-open (select)
+  "Open selected url, or switch buffer if it is already opened."
+  (let ((buf (addressbar--buffer-existp select)))
+    (if buf
+        (switch-to-buffer buf)
+      (cond ((string-match "g " select) (browse-url (concat eww-search-prefix select)))
+            (t (browse-url select))
+            ))
+    ))
+
 ;;;###autoload
 (defun addressbar ()
   "Handy addressbar function for emacs browser."
   (interactive)
-  (eww (completing-read "EWW: " (sort (addressbar-list-candidates) 'addressbar--have-newer-timestamp))))
+  (addressbar-open (completing-read "Browse: " (sort (addressbar-list-candidates) 'addressbar--have-newer-timestamp))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (when (locate-library "ivy")
   (require 'ivy)
 
-  (defun counsel-addressbar-browse (entry)
-    "Open selected url, or switch buffer if it is already opened."
-    (let ((buf (addressbar--eww-buffer-existp entry)))
-      (if buf
-          (switch-to-buffer buf)
-        (eww entry))))
-
   (ivy-set-actions 'counsel-addressbar
-                   '(("d" addressbar-delete-entry "Delete URL")
+                   '(("d" addressbar-delete-entry "Delete this URL")
                      ("o" brouse-url-generic "Open URL in generic-browser")
                      ("b" addressbar-add-bookmark "Add URL to eww bookmark")
-                     ("c" addressbar-copy-link "Copy URL")
+                     ;;("c" addressbar-copy-link "Copy URL")
                      ))
 
 ;;;###autoload
@@ -204,7 +207,7 @@ If bookmarked with eww, also delete it."
     "Onestop browsing manager."
     (interactive)
     (ivy-read "Browse: " (addressbar-list-candidates)
-              :action 'counsel-addressbar-browse
+              :action 'addressbar-open
               :history 'counsel-addressbar-history
               :sort t
               ))
