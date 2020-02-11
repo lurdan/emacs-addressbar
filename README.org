@@ -1,38 +1,41 @@
 #+TITLE: addressbar-eww
 
-Handy addressbar function for eww browser.
+Handy addressbar function for browsing in emacs.
 
 * Feature
 works like common addressbar you know:
 - suggest url to open from past history:
   - sorted by timestamp
   - saved for next emacs session
-- switch to eww buffer if already opened
+- switch to browser buffer if already opened
 - or input words for search engines
-- add/delete bookmark from history (ivy)
+- add/delete eww bookmark from history (ivy)
 - TBD: screenshot
 
 * Install
 TBD
 
 * Usage
-M-x addressbar-eww or M-x counsel-eww will do the job.
+Call these command will do the job:
+- M-x addressbar
+- M-x counsel-addressbar
+- M-x ido-addressbar
 
 * Sample configuration
 
 #+BEGIN_SRC emacs-lisp
-(leaf addressbar-eww
-  :el-get lurdan/emacs-addressbar-eww
-  :bind (("C-x b" . counsel-eww))
+(leaf addressbar
+  :el-get lurdan/emacs-addressbar
+  :bind (("C-x b" . counsel-addressbar))
   :config
   (add-to-list 'ivy-ignore-buffers "\\ \*eww*")
   )
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-(use-package addressbar-eww
-  :el-get lurdan/emacs-addressbar-eww
-  :bind (("C-x b" . counsel-eww))
+(use-package addressbar
+  :el-get lurdan/emacs-addressbar
+  :bind (("C-x b" . counsel-addressbar))
   :config
   (add-to-list 'ivy-ignore-buffers "\\ \*eww*")
   )

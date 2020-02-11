@@ -129,8 +129,8 @@
 
   (defun addressbar--w3m-add-entry (type url title)
     (let (plist)
-      (plist-put plist :url url)
-      (plist-put plist :title title)
+      (setq plist (plist-put plist :url url))
+      (setq plist (plist-put plist :title title))
       (addressbar--add-entry type plist)))
 
   (defun addressbar--w3m-load-buffer-history (buf)
@@ -144,7 +144,7 @@
               (addressbar--w3m-add-entry :history url title)
               ))))))
 
-  (defun addressbar--w3m-add-current-history ()
+  (defun addressbar--w3m-add-current-history (dummy)
     "Add or update addressbar candidate with current browsing page."
     (addressbar--w3m-add-entry :history w3m-current-url w3m-current-title)
     )
@@ -246,8 +246,9 @@ If bookmarked with eww, also delete it."
   (interactive)
   (addressbar-open (completing-read "Browse: " (sort (addressbar-list-candidates) 'addressbar--have-newer-timestamp))))
 
-(defun addressbar-ido ()
-    "Use `ido-completing-read' to \\[find-file] a recent file"
+;;;###autoload
+(defun ido-addressbar ()
+    "ido wrapper of `addressbar'"
     (interactive)
     (let ((urls (mapcar (lambda (f)
                            (cons (addressbar--display-url f) f))
