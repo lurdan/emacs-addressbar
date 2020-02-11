@@ -208,6 +208,28 @@ If bookmarked with eww, also delete it."
     (eww-write-bookmarks)
     ))
 
+(defvar addressbar-dispaly-url-max-length nil)
+
+(defun addressbar--display-url (entry)
+  (let ((max (or addressbar-display-url-max-length
+                 (round (* (frame-width) .7))))
+        (len (length entry)))
+    (substring entry 0 (if (> len max)
+                           max len))
+    ))
+
+(defun addressbar--display-type (entry)
+  (pcase (addressbar--get-type entry)
+    (:bookmark "b")
+    (:history "h")
+    ))
+(defun addressbar--display-icon (entry)
+  (all-the-icons-xxxx "XXXX" :height .9))
+
+(defun addressbar--display-time (entry)
+  (format-time-string "%Y-%m-%d %H:%M" (seconds-to-time (addressbar--get-time entry)))
+  )
+
 (defun addressbar-open (select)
   "Open selected url, or switch buffer if it is already opened."
   (let ((buf (addressbar--buffer-existp select)))
@@ -223,6 +245,15 @@ If bookmarked with eww, also delete it."
   "Handy addressbar function for emacs browser."
   (interactive)
   (addressbar-open (completing-read "Browse: " (sort (addressbar-list-candidates) 'addressbar--have-newer-timestamp))))
+
+(defun addressbar-ido ()
+    "Use `ido-completing-read' to \\[find-file] a recent file"
+    (interactive)
+    (let ((urls (mapcar (lambda (f)
+                           (cons (addressbar--display-url f) f))
+                         (sort (addressbar-list-candidates) 'addressbar--have-newer-timestamp))))
+      (let ((select (ido-completing-read "Browse: " (mapcar #'car urls))))
+        (addressbar-open (assoc-default select urls)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (when (locate-library "ivy")
@@ -248,29 +279,13 @@ If bookmarked with eww, also delete it."
   (add-to-list 'ivy-sort-functions-alist
              '(counsel-addressbar . addressbar--have-newer-timestamp))
 
-  (defun counsel-addressbar-display-type (entry)
-    (pcase (addressbar--get-type entry)
-      (:bookmark "b")
-      (:history "h")
-      ))
-
-  (defun counsel-addressbar-display-icon (entry)
-      (all-the-icons-xxxx "XXXX" :height .9))
-
-  (defun counsel-addressbar-display-time (entry)
-    (format-time-string "%Y-%m-%d %H:%M" (seconds-to-time (addressbar--get-time entry)))
-    )
-
-  (defun counsel-addressbar-display-url (entry)
-    )
-
   (setq ivy-rich-display-transformers-list
         (plist-put ivy-rich-display-transformers-list
                    'counsel-addressbar
                    '(:columns
-                     ((counsel-addressbar-display-type (:face success :width 1))
-                      (counsel-addressbar-display-time (:width 16))
-                      (ivy-rich-candidate (:width 0.7))
+                     ((addressbar--display-type (:face success :width 1))
+                      (addressbar--display-time (:width 16))
+                      (addressbar--display-url (:width 0.7))
                       (addressbar--get-title (:width 0.1 :face font-lock-doc-face))
                       ))
                    ))
