@@ -111,14 +111,45 @@
       (addressbar--eww-add-current-history)
       )))
 
-(defun addressbar--eww-buffer-existp (entry)
-  "Return eww buffer which renders specified url, if exists."
+(defun addressbar--buffer-existp (entry)
+  "Return buffer which renders specified url, if exists."
   (dolist (buf (buffer-list))
     (with-current-buffer buf
       (if (derived-mode-p 'eww-mode)
           (if (string-equal (plist-get eww-data :url) entry)
-              (return buf))
-        ))))
+              (return buf)))
+      (if (derived-mode-p 'w3m-mode)
+          (if (string-equal w3m-current-url entry)
+              (return buf)))
+      )))
+
+;; w3m related functions
+(when (locate-library "w3m")
+  (require 'w3m)
+
+  (defun addressbar--w3m-add-entry (type url title)
+    (let (plist)
+      (plist-put plist :url url)
+      (plist-put plist :title title)
+      (addressbar--add-entry type plist)))
+
+  (defun addressbar--w3m-load-buffer-history (buf)
+    (with-current-buffer buf
+      (when (derived-mode-p 'w3m-mode)
+        (dolist (his w3m-history-flat)
+          (let ((url (car his))
+                (title (cdadr his))
+                plist)
+            (unless (string-match "^about" url)
+              (addressbar--w3m-add-entry :history url title)
+              ))))))
+
+  (defun addressbar--w3m-add-current-history ()
+    "Add or update addressbar candidate with current browsing page."
+    (addressbar--w3m-add-entry :history w3m-current-url w3m-current-title)
+    )
+  (add-hook 'w3m-display-hook 'addressbar--w3m-add-current-history)
+  )
 
 (defvar addressbar--startup t)
 (defun addressbar--update-entries ()
@@ -128,7 +159,9 @@ Once in startup, it also search history of eww buffers."
   (addressbar--eww-load-bookmark)
   (when addressbar--startup   ;; should be run only once
     (dolist (buf (buffer-list))
-      (addressbar--eww-load-buffer-history buf))
+      (if (featurep 'w3m) (addressbar--w3m-load-buffer-history buf))
+      (addressbar--eww-load-buffer-history buf)
+      )
     (setq addressbar--startup nil))
   )
 
