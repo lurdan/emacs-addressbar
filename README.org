@@ -2,24 +2,56 @@
 
 Handy addressbar function for browsing in emacs.
 
-* Feature
+#+ATTR_HTML: :width 800px
+[[file:sample.gif]]
+
+* Features
 works like common addressbar you know:
 - suggest url to open from past history:
   - sorted by timestamp
   - saved for next emacs session
 - switch to browser buffer if already opened
-- or input words for search engines
+- or search internet using input words:
+  - with multiple search engines you specified
+- with prefix args, it pick thing-at-point for initial input
 - add/delete eww bookmark from history (ivy)
-- TBD: screenshot
-
-* Install
-TBD
 
 * Usage
 Call these command will do the job:
-- M-x addressbar
-- M-x counsel-addressbar
-- M-x ido-addressbar
+- =addressbar=
+- =counsel-addressbar=
+- =ido-addressbar=
+
+** select history
+filter histories with input words, and select target line with =RET=.
+
+** input url
+Without history, it will open the url.
+
+** input search words
+Without history, it will throw inputs to predefined search engine (depends on =browse-url= settings).
+
+** input search words with search command
+If you specify search command as prefix, it will throw inputs to specified search engine.
+You can configure search commands.
+
+ex) input =g XXXXXX= will search XXXXXX with google.
+
+* Install
+Place =addressbar.el= to your =load-path= and call =(require 'addressbar)=
+
+* Setting
+** addressbar-persistent-history-directory
+History data file will be saved under this directory.
+
+** addressbar-cleanup-threshold
+It indicates max number of history entries. When exceeded, it will automatically remove oldest entries.
+
+** addressbar-open-keywords
+Predefined search commands, associate list of keyword and search prefix like: ("g" . "https://google.com/search/")
+
+** addressbar-ignore-url-regexp
+Urls match this prefix won't be added to history.
 
 * Sample configuration
 
@@ -29,6 +61,7 @@ Call these command will do the job:
   :bind (("C-x b" . counsel-addressbar))
   :config
   (add-to-list 'ivy-ignore-buffers "\\ \*eww*")
+  (setq addressbar-cleanup-threshold 100000)
   )
 #+END_SRC
 
@@ -38,5 +71,6 @@ Call these command will do the job:
   :bind (("C-x b" . counsel-addressbar))
   :config
   (add-to-list 'ivy-ignore-buffers "\\ \*eww*")
+  (setq addressbar-cleanup-threshold 100000)
   )
 #+END_SRC
