@@ -1,6 +1,8 @@
 (require 'eww)
 (require 'subr-x)
-(require 'cl)
+(require 'cl-lib)
+
+;; custom variables
 
 (defgroup addressbar nil
   "Addressbar for Emacs"
