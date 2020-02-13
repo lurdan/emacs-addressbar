@@ -16,32 +16,28 @@
   :type 'directory)
 
 (defcustom addressbar-ignore-url-regexp "\\(://duckduckgo\\.com/\\|google\\.com/search\\)"
-  "URL match this regexp won't list or save as history."
-  )
+  "URL match this regexp won't list or save as history.")
 
 (defcustom addressbar-cleanup-threshold 10000
-  "Histories are automatically pruned when exceeding this value, 0 means histories won't be housekept."
-  )
-
-(defcustom addressbar-copy-org-link nil
-  ""
-  )
+  "Histories are automatically pruned when exceeding this value, 0 means histories won't be housekept.")
 
 (defcustom addressbar-display-url-max-length nil
-  ""
-  )
+  "")
 
 (defcustom addressbar-open-keywords '(
                                  ("g" . "https://google.com/search/")
-                                 ("ej" . "https://ejje.weblio.jp/content/")
-                                 )
-  "You can define specific search command using this associated list."
-  )
+                                 ("weblio" . "https://ejje.weblio.jp/content/"))
+  "You can define specific search command using this associated list.")
+
+(defcustom addressbar-display-icons t
+  "")
+
+(defcustom addressbar-time-format "%m-%d %H:%M"
+  "")
 
 ;; internal variables
 (defvar addressbar--entries (make-hash-table :test #'equal)
-  "Variable which holds addressbar histories."
-  )
+  "Variable which holds addressbar histories.")
 
 (defvar addressbar--debug nil)
 
@@ -51,15 +47,14 @@
 
 (defun addressbar--log (msg param)
   (if addressbar--debug
-      (message "DEBUG: %s %s" msg param)
-    ))
+      (message "DEBUG: %s %s" msg param)))
 
 (defun addressbar--cleanup ()
   "delete oldest entries from candidates"
   (if (< addressbar-cleanup-threshold (hash-table-count addressbar--entries))
       (dolist (entry (cl-subseq (sort (hash-table-keys addressbar--entries) 'addressbar--have-newer-timestamp)
                                 (round (* addressbar-cleanup-threshold .9))))
-        (unless (eq (addressbar--get-type entry) :bookmark)
+        (unless (eq (addressbar--get-type entry) :b)
           (addressbar--log "cleanup:" entry)
           (remhash entry addressbar--entries)))))
 
@@ -100,14 +95,13 @@
         (title (plist-get plist :title))
         (time (plist-get plist :time)))
     (unless (string-match-p addressbar-ignore-url-regexp url)
-      (puthash url (list (if (addressbar--get-type url) :bookmark type)
+      (puthash url (list (if (eq (addressbar--get-type url) :b) :b type)
                          title
                          (time-to-seconds (if time
                                               (decode-time (parse-time-string time))
                                             (current-time))))
                addressbar--entries)
-      (addressbar--save-persistent-history)
-      )))
+      (addressbar--save-persistent-history))))
 
 ;; eww related functions
 (defun addressbar--eww-load-bookmark ()
@@ -115,13 +109,11 @@
   (eww-read-bookmarks)
   (dolist (bookmark eww-bookmarks)
     (unless (gethash (plist-get bookmark :url) addressbar--entries)
-      (addressbar--add-entry :bookmark bookmark)
-      )))
+      (addressbar--add-entry :b bookmark))))
 
 (defun addressbar--eww-add-current-history ()
   "Add or update addressbar candidate with current browsing page."
-  (addressbar--add-entry :history eww-data)
-  )
+  (addressbar--add-entry :h eww-data))
 (add-hook 'eww-after-render-hook 'addressbar--eww-add-current-history)
 
 (defun addressbar--eww-load-buffer-history (buf)
@@ -131,10 +123,16 @@
       (or (null eww-history)
           (let (his url title format start)
             (dolist (his eww-history)
-              (addressbar--add-entry :history his)
-              )))
-      (addressbar--eww-add-current-history)
-      )))
+              (addressbar--add-entry :h his))))
+      (addressbar--eww-add-current-history))))
+
+(defun addressbar-kill-all-browser-buffers ()
+  "Close all tabs."
+  (interactive)
+  (dolist (buf (buffer-list))
+    (with-current-buffer buf
+      (if (derived-mode-p 'eww-mode 'w3m-mode)
+          (kill-buffer buf)))))
 
 (defun addressbar--buffer-existp (entry)
   "Return buffer which renders specified url, if exists."
@@ -145,8 +143,7 @@
               (return buf)))
       (if (derived-mode-p 'w3m-mode)
           (if (string-equal w3m-current-url entry)
-              (return buf)))
-      )))
+              (return buf))))))
 
 ;; w3m related functions
 (when (locate-library "w3m")
@@ -166,15 +163,12 @@
                 (title (cdadr his))
                 plist)
             (unless (string-match "^about" url)
-              (addressbar--w3m-add-entry :history url title)
-              ))))))
+              (addressbar--w3m-add-entry :h url title)))))))
 
   (defun addressbar--w3m-add-current-history (dummy)
     "Add or update addressbar candidate with current browsing page."
-    (addressbar--w3m-add-entry :history w3m-current-url w3m-current-title)
-    )
-  (add-hook 'w3m-display-hook 'addressbar--w3m-add-current-history)
-  )
+    (addressbar--w3m-add-entry :h w3m-current-url w3m-current-title))
+  (add-hook 'w3m-display-hook 'addressbar--w3m-add-current-history))
 
 (defun addressbar--update-entries ()
   "Collect entries of history hash. \
@@ -184,43 +178,31 @@ Once in startup, it also search history of eww buffers."
   (when addressbar--startup   ;; should be run only once
     (dolist (buf (buffer-list))
       (if (featurep 'w3m) (addressbar--w3m-load-buffer-history buf))
-      (addressbar--eww-load-buffer-history buf)
-      )
-    (setq addressbar--startup nil))
-  )
+      (addressbar--eww-load-buffer-history buf))
+    (setq addressbar--startup nil)))
 
 (defun addressbar-list-candidates ()
   "Enumerate history, bookmarks, and browsing buffers."
   (addressbar--update-entries)
-  (hash-table-keys addressbar--entries)
-  )
+  (hash-table-keys addressbar--entries))
 
 ;; functions for entry manipulation
 
-(defun addressbar-copy-link (entry)
-  ""
+(defun addressbar-copy-link-org (entry)
+  "Copy selected URL as `org-mode' style format."
   (let ((title (addressbar--get-title entry)))
-    (if addressbar-copy-org-link
-        (org-link-store-props
-         :type "https"
-         :link entry
-         :url entry
-         :description title)
-      (kill-new entry)
-      )))
+    (kill-new (format-string "[[%s][%s]]" entry title))))
 
 (defun addressbar-delete-entry (entry)
   "Delete selected url from history candidates. \
 If bookmarked with eww, also delete it."
-  (when (eq (addressbar--get-type entry) :bookmark)
+  (when (eq (addressbar--get-type entry) :b)
     (let (bm)
       (dolist (bookmark eww-bookmarks)
         (if (not (equal entry (plist-get bookmark :url)))
-            (push bookmark bm)
-          ))
+            (push bookmark bm)))
       (setq eww-bookmarks bm)
-      (eww-write-bookmarks)
-      ))
+      (eww-write-bookmarks)))
   (remhash entry addressbar--entries)
   (addressbar--save-persistent-history))
 
@@ -229,20 +211,19 @@ If bookmarked with eww, also delete it."
       (or (thing-at-point 'url t)
           (thing-at-point 'filename t)
           (thing-at-point 'symbol t)
-          (thing-at-point 'word t)
-          )))
+          (thing-at-point 'word t))))
 
 (defun addressbar-open (select)
   "Open selected url, or switch buffer if it is already opened."
-  (let ((buf (addressbar--buffer-existp select)))
+  (let ((buf (addressbar--buffer-existp select))
+        (url (replace-regexp-in-string "\\$$" "" select)))
     (if buf
         (switch-to-buffer buf)
-      (let* ((input (split-string select))
-             (keyword (assoc (car input) addressbar-open-keywords))
-             )
+      (let* ((input (split-string url))
+             (keyword (assoc (car input) addressbar-open-keywords)))
         (if keyword
             (browse-url (concat (cdr keyword) (cadr input)))
-          (browse-url select))))))
+          (browse-url url))))))
 
 ;; mimics eww's function
 (defun addressbar-add-bookmark (entry)
@@ -268,20 +249,28 @@ If bookmarked with eww, also delete it."
 (defun addressbar--display-url (entry)
   (let ((max (or addressbar-display-url-max-length
                  (round (* (frame-width) .7))))
+        (icon (and addressbar-display-icons (featurep 'all-the-icons) (all-the-icons-icon-for-url entry)))
         (len (length entry)))
-    (substring entry 0 (if (> len max)
-                           max len))))
+    (concat icon (substring entry 0 (if (> len max)
+                                        max len)))))
+
+(defun addressbar--set-icon (e u c)
+  ""
+  (cond ((and addressbar-display-icons (featurep 'all-the-icons))
+         (all-the-icons-material e :height .9))
+        ((and addressbar-display-icons (char-displayable-p u))
+         u)
+        (t c)))
 
 (defun addressbar--display-type (entry)
+  (if (addressbar--buffer-existp entry)
+      (addressbar--set-icon "tab" "" "t")
   (pcase (addressbar--get-type entry)
-    (:bookmark "b")
-    (:history "h")
-    ))
-(defun addressbar--display-icon (entry)
-  (all-the-icons-xxxx "XXXX" :height .9))
+    (:b (addressbar--set-icon "bookmark" "🔖" "b"))
+    (:h (addressbar--set-icon "history" "📜" "h")))))
 
 (defun addressbar--display-time (entry)
-  (format-time-string "%Y-%m-%d %H:%M" (seconds-to-time (addressbar--get-time entry))))
+  (format-time-string addressbar-time-format (seconds-to-time (addressbar--get-time entry))))
 
 ;; functions for interactive interface
 
@@ -292,12 +281,11 @@ If bookmarked with eww, also delete it."
   (addressbar-open (completing-read "Browse: "
                                     (sort (addressbar-list-candidates) 'addressbar--have-newer-timestamp)
                                     nil nil
-                                    (addressbar--thing-at-point)
-                                    )))
+                                    (addressbar--thing-at-point))))
 
 ;;;###autoload
 (defun ido-addressbar ()
-    "ido wrapper of `addressbar'"
+    "ido wrapper of `addressbar'."
     (interactive)
     (let ((urls (mapcar (lambda (f)
                            (cons (addressbar--display-url f) f))
@@ -310,22 +298,20 @@ If bookmarked with eww, also delete it."
 
   (ivy-set-actions 'counsel-addressbar
                    '(("d" addressbar-delete-entry "Delete this URL")
-                     ("o" brouse-url-generic "Open URL in generic-browser")
+                     ("e" brouse-url-generic "Open URL in generic-browser")
                      ("b" addressbar-add-bookmark "Add URL to eww bookmark")
-                     ("c" addressbar-copy-link "Copy URL")
-                     ))
+                     ("c" addressbar-copy-link-org "Copy URL as org style")))
 
 ;;;###autoload
   (defun counsel-addressbar ()
-    "Onestop browsing manager."
+    "counsel wrapper of `addressbar'."
     (interactive)
     (let ((thing (addressbar--thing-at-point)))
       (ivy-read "Browse: " (addressbar-list-candidates)
                 :action 'addressbar-open
                 :history 'counsel-addressbar-history
                 :initial-input thing
-                :sort t
-                )))
+                :sort t)))
 
   (add-to-list 'ivy-sort-functions-alist
              '(counsel-addressbar . addressbar--have-newer-timestamp))
@@ -333,14 +319,11 @@ If bookmarked with eww, also delete it."
   (setq ivy-rich-display-transformers-list
         (plist-put ivy-rich-display-transformers-list
                    'counsel-addressbar
-                   '(:columns
-                     ((addressbar--display-type (:face success :width 1))
-                      (addressbar--display-time (:width 16))
+                   `(:columns
+                     ((addressbar--display-type (:face success :width 2))
+                      (addressbar--display-time (:width ,(length (format-time-string addressbar-time-format (current-time)))))
                       (addressbar--display-url (:width 0.7))
-                      (addressbar--get-title (:width 0.1 :face font-lock-doc-face))
-                      ))
-                   ))
-  (if ivy-rich-mode (ivy-rich-reload))
-  )
+                      (addressbar--get-title (:width 0.1 :face font-lock-doc-face))))))
+  (if ivy-rich-mode (ivy-rich-reload)))
 
 (provide 'addressbar)
