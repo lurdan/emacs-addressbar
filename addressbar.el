@@ -289,20 +289,27 @@ If bookmarked with `eww', also delete it."
 
 ;; functions for display data
 
+(defun addressbar--column-width (type)
+  (let* ((max (frame-width))
+         (url (or addressbar-display-url-max-length
+                  (if (> (/ max 3) 120) 120 (/ max 3)))))
+    (pcase type
+      (:url url)
+      (:title (- (/ max 2) url)))))
+
 (defun addressbar--display-url (entry)
   "Return URL modified for selection display, cutting off too long and prefix site icon."
-  (let ((max (or addressbar-display-url-max-length
-                 (round (* (frame-width) .7))))
+  (let ((max (addressbar--column-width :url))
         (icon (and addressbar-display-icons (featurep 'all-the-icons) (all-the-icons-icon-for-url entry)))
         (len (length entry)))
     (concat icon (substring entry 0 (if (> len max)
                                         max len)))))
 
 (defun addressbar--set-icon (e u c)
-  ""
+  "Display icon with predefined fallbacks."
   (cond ((and addressbar-display-icons (featurep 'all-the-icons))
          (all-the-icons-material e :height .9))
-        ((and addressbar-display-icons (char-displayable-p u))
+        ((and addressbar-display-icons (char-displayable-p ?u))
          u)
         (t c)))
 
@@ -347,8 +354,7 @@ If bookmarked with `eww', also delete it."
       (let ((select (ido-completing-read "Browse: " (mapcar #'car urls) nil nil (addressbar--thing-at-point))))
         (addressbar-open (assoc-default select urls)))))
 
-(when (locate-library "ivy")
-  (require 'ivy)
+(with-eval-after-load "ivy"
 
 ;;;###autoload
   (defun counsel-addressbar ()
@@ -369,16 +375,23 @@ If bookmarked with `eww', also delete it."
 
   (add-to-list 'ivy-sort-functions-alist
              '(counsel-addressbar . addressbar--have-newer-timestamp))
+  )
 
-  (setq ivy-rich-display-transformers-list
-        (plist-put ivy-rich-display-transformers-list
-                   'counsel-addressbar
-                   `(:columns
-                     ((addressbar--display-type (:face success :width 2))
-                      (addressbar--display-time (:width ,(length (format-time-string addressbar-time-format (current-time)))))
-                      (addressbar--display-url (:width 0.7))
-                      (addressbar--get-title (:width 0.1 :face font-lock-doc-face))))))
-  (if ivy-rich-mode (ivy-rich-reload)))
+(with-eval-after-load "ivy-rich"
+  (defun addressbar--ivy-rich-setup ()
+    (setq ivy-rich-display-transformers-list
+          (plist-put ivy-rich-display-transformers-list
+                     'counsel-addressbar
+                     `(:columns
+                       ((addressbar--display-type (:face success :width 2))
+                        (addressbar--display-time (:width ,(length (format-time-string addressbar-time-format (current-time)))))
+                        (addressbar--display-url (:width ,(addressbar--column-width :url)))
+                        (addressbar--get-title (:width ,(addressbar--column-width :title) :face font-lock-doc-face))))))
+    (if ivy-rich-mode (ivy-rich-reload)))
+  (addressbar--ivy-rich-setup)
+  (if ivy-posframe-mode
+      (add-hook 'window-size-change-functions 'addressbar--ivy-rich-setup))
+  )
 
 (provide 'addressbar)
 
