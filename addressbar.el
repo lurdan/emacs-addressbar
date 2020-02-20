@@ -56,7 +56,7 @@
   :type 'integer)
 
 (defcustom addressbar-search-command-alist '(
-                                      ("g" . "https://google.com/search/")
+                                      ("g" . "https://google.com/search?q=")
                                       ("weblio" . "https://ejje.weblio.jp/content/"))
   "You can define specific search command using this associated list."
   :group 'addressbar
@@ -265,7 +265,7 @@ If bookmarked with `eww', also delete it."
       (let* ((input (split-string url))
              (keyword (assoc (car input) addressbar-search-command-alist)))
         (if keyword
-            (browse-url (concat (cdr keyword) (cadr input)))
+            (browse-url (concat (cdr keyword) (substring url (length (car keyword)))))
           (browse-url url))))))
 
 ;; mimics eww's function
